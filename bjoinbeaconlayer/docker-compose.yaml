@@ -1,0 +1,51 @@
+version: "3"
+name: alt-beacon-validator
+
+volumes:
+  data:
+
+services:
+  validator:
+    image: 305587085711.dkr.ecr.us-west-2.amazonaws.com/alt-beacon:v0.3.0
+    container_name: alt-beacon-validator
+    ports:
+      - 30333:30333
+      - 127.0.0.1:9933:9933
+      - 127.0.0.1:9944:9944
+      - 127.0.0.1:9615:9615
+
+    working_dir: /data
+
+    user: root
+    volumes:
+      - data:/data
+      - ./chainspec.json:/chainspec.json
+      - ./keystore:/data/chains/altbeacon_testnet/keystore
+
+    env_file:
+      - vars.env
+    environment:
+      RUST_LOG: runtime=info
+
+    entrypoint: [/bin/bash, -c]
+    command:
+      - >-
+        /usr/local/bin/alt-beacon key insert --base-path=/data --key-type aura --scheme Sr25519 --chain=/chainspec.json --suri="$$MNEMONIC//aura";
+        /usr/local/bin/alt-beacon key insert --base-path=/data --key-type gran --scheme Ed25519 --chain=/chainspec.json --suri="$$MNEMONIC//grandpa";
+        chmod -R 0755 /data/chains/*/keystore;
+        exec /usr/local/bin/alt-beacon
+        --validator
+        --log=info
+        --base-path=/data
+        --chain=/chainspec.json
+        --port=30333
+        --rpc-port=9933
+        --ws-port=9944
+        --prometheus-port=9615
+        --rpc-cors=all
+        --rpc-methods=unsafe
+        --unsafe-rpc-external
+        --unsafe-ws-external
+        --prometheus-external
+        --execution=native-else-wasm
+        --node-key=$$NODEKEY

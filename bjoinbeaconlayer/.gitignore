@@ -1,0 +1,5 @@
+data/
+MNEMONIC
+vars.env
+keystore
+chainspec.json
